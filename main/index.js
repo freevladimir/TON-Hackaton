@@ -3,6 +3,12 @@ const app = express();
 
 const blockchainApi = require("./api");
 
+const TelegramBot = require('node-telegram-bot-api')
+
+const token = '1067249757:AAElGAQa6ldsA6YwjNTdw0MBAMRAL-mZdqk'
+
+var bot = new TelegramBot(token, {polling: true})
+
 app.listen(3001, () => {
   console.log("Server ready");
 });
@@ -35,8 +41,16 @@ setInterval(async () => {
   }
 }, 1000);
 
+/*
+  Bot
+*/
+bot.on('message', function (msg, match) {
+  var fromId = msg.from.id
+  bot.sendMessage(fromId, 'здарова ебать я бот-аукцион')
+})
+
 // test code for Bot
-app.get("t", async m => {
+/*app.get("t", async m => {
   const userId = m.id;
   if (m.new) {
     m.send("Hi");
@@ -87,4 +101,4 @@ app.get("t", async m => {
       m.send("Ой, ошибка");
     }
   }
-});
+});*/
