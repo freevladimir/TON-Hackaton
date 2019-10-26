@@ -10,32 +10,47 @@ app.listen(3000, () => {
 app.post("/api/create-wallet", (req, res) => {
   exec("ls -la", (err, stdout, stderr) => {
     if (err) {
+      console.log(err);
       res.send(err).status(500);
       return;
     }
     console.log(stdout);
 
-    res.sendStatus(200);
+    res.send({
+      walletId: "111"
+    });
   });
 });
 
 app.get("/api/get-balance", (req, res) => {
-  if (err) {
-    res.send(err).status(500);
-    return;
-  }
-  console.log(stdout);
+  exec("ls -la", (err, stdout, stderr) => {
+    if (err) {
+      console.log(err);
+      res.send(err).status(500);
+      return;
+    }
+    console.log(stdout);
 
-  res.sendStatus(200);
+    res.send({
+      balance: 120
+    });
+  });
 });
 
 app.post("/api/transaction", (req, res) => {
   const { sender, recipient, amount } = req.body;
-  if (err) {
-    res.send(err).status(500);
-    return;
-  }
-  console.log(stdout);
+  console.log(req.body);
 
-  res.sendStatus(200);
+  exec("ls -la", (err, stdout, stderr) => {
+    if (err) {
+      console.log(err);
+      res.send(err).status(500);
+      return;
+    }
+    console.log(stdout);
+
+    res.send({
+      status: "ok"
+    });
+  });
 });
