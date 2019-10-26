@@ -3,11 +3,11 @@ const app = express();
 
 const blockchainApi = require("./api");
 
-const TelegramBot = require('node-telegram-bot-api')
+const TelegramBot = require("node-telegram-bot-api");
 
-const token = '1067249757:AAElGAQa6ldsA6YwjNTdw0MBAMRAL-mZdqk'
+const token = "1067249757:AAElGAQa6ldsA6YwjNTdw0MBAMRAL-mZdqk";
 
-var bot = new TelegramBot(token, {polling: true})
+var bot = new TelegramBot(token, { polling: true });
 
 app.listen(3001, () => {
   console.log("Server ready");
@@ -26,14 +26,11 @@ const db = {
 const Auction = require("auction");
 const auction = new Auction();
 
-// заглушка для бота
-const bot = {};
-
 // проверка жизни аукциона
 setInterval(async () => {
   if (auction.isExprired()) {
     auction.users.forEach(user => {
-      bot.send(user, "Аукцион закончился");
+      bot.sendMessage(user, "Аукцион закончился, но скоро начнем новый");
       // ...
     });
     auction.close();
@@ -44,10 +41,10 @@ setInterval(async () => {
 /*
   Bot
 */
-bot.on('message', function (msg, match) {
-  var fromId = msg.from.id
-  bot.sendMessage(fromId, 'здарова ебать я бот-аукцион')
-})
+bot.on("message", function(msg, match) {
+  var fromId = msg.from.id;
+  bot.sendMessage(fromId, "здарова");
+});
 
 // test code for Bot
 /*app.get("t", async m => {
