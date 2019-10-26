@@ -1,7 +1,11 @@
 const express = require("express");
 const { exec } = require("child_process");
+const bodyParser = require("body-parser");
 
 const app = express();
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 app.listen(3000, () => {
   console.log("Server ready");
