@@ -1,13 +1,13 @@
 const express = require("express");
-
 const app = express();
+
+const blockchainApi = require("./api");
 
 app.listen(3001, () => {
   console.log("Server ready");
 });
 
-const BLOCKCHAIN_API = "localhost:3000";
-
+// бд, будет тут или настоящая потом
 const db = {
   users: {
     id: {
@@ -17,46 +17,13 @@ const db = {
   }
 };
 
-// test code for Bot
-
-class Auction {
-  constructor() {
-    this.state = {
-      // created: Date
-      // name: 'Picture'
-      // id: 5,
-      users: []
-    };
-  }
-
-  create(params) {
-    this.state = params;
-  }
-
-  isExprired() {
-    const AUCTION_LIFETIME = 10 * 60 * 1000; // 10 mins
-
-    if (auction.created + AUCTION_LIFETIME > Date.parse(new Date())) {
-      return true;
-    }
-
-    return false;
-  }
-
-  addUser(id) {
-    this.state.users.push(id);
-  }
-
-  close() {
-    this.state = {
-      users: []
-    };
-  }
-}
-
+const Auction = require("auction");
 const auction = new Auction();
 
+// заглушка для бота
 const bot = {};
+
+// проверка жизни аукциона
 setInterval(async () => {
   if (auction.isExprired()) {
     auction.users.forEach(user => {
@@ -68,6 +35,7 @@ setInterval(async () => {
   }
 }, 1000);
 
+// test code for Bot
 app.get("t", async m => {
   const userId = m.id;
   if (m.new) {
@@ -75,7 +43,7 @@ app.get("t", async m => {
     try {
       const { walledId } = db.users.find(user => user.telegramId === userId);
       if (!walledId) {
-        const newWalletId = await createWallet();
+        const newWalletId = await blockchainApi.createWallet();
         m.send(`Your wallet is ${newWalletId}`);
       } else {
         m.send(`У тебя уже есть кошелек ${walletId}`);
@@ -101,11 +69,12 @@ app.get("t", async m => {
     m.send("Ну ладно:( В другой раз");
   }
 
+  // сколько отправить
   if (m.text === "number") {
     const senderWallet = db.users[m.id].walletId;
 
     try {
-      await sendTransaction({
+      await blockchainApi.sendTransaction({
         sender: senderWallet,
         recipient: OUR_VALLET,
         amount: 200
@@ -119,41 +88,3 @@ app.get("t", async m => {
     }
   }
 });
-
-async function createWallet() {
-  try {
-    const response = await axios.post(`${BLOCKCHAIN_API}/api/create-wallet`);
-    const { walletId } = response.data;
-
-    return walletId;
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-}
-
-async function getBalance() {
-  try {
-    const response = await axios.get(`${BLOCKCHAIN_API}/api/get-balance`);
-    const { balance } = response.data;
-    return balance;
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-}
-
-async function sendTransaction(sender, recipient, amount) {
-  try {
-    const response = await axios.post(`${BLOCKCHAIN_API}/api/transaction`, {
-      sender,
-      recipient,
-      amount
-    });
-
-    return true;
-  } catch (error) {
-    console.log(error);
-    throw error;
-  }
-}
