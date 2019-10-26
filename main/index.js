@@ -23,19 +23,27 @@ const db = {
   }
 };
 
-const Auction = require("auction");
+const Auction = require("./auction");
 const auction = new Auction();
+
+// первый акцион
+auction.create({ name: "Picture" });
 
 // проверка жизни аукциона
 setInterval(async () => {
+  console.log("Auction:", auction.state);
   if (auction.isExprired()) {
-    auction.users.forEach(user => {
+    console.log("Close auction");
+
+    auction.state.users.forEach(user => {
       bot.sendMessage(user, "Аукцион закончился, но скоро начнем новый");
       // ...
     });
+
     auction.close();
-    auction.create();
+    auction.create({ name: "Picture " + Math.random() });
   }
+  console.log("Auction is running");
 }, 1000);
 
 /*

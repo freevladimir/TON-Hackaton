@@ -9,13 +9,17 @@ class Auction {
   }
 
   create(params) {
-    this.state = params;
+    this.state = {
+      ...params,
+      users: [],
+      created: Date.parse(new Date())
+    };
   }
 
   isExprired() {
     const AUCTION_LIFETIME = 10 * 60 * 1000; // 10 mins
 
-    if (auction.created + AUCTION_LIFETIME > Date.parse(new Date())) {
+    if (Date.parse(new Date()) > this.state.created + AUCTION_LIFETIME) {
       return true;
     }
 

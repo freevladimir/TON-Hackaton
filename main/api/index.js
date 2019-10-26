@@ -40,4 +40,4 @@ async function sendTransaction(sender, recipient, amount) {
   }
 }
 
-export { createWallet, getBalance, sendTransaction };
+module.exports = { createWallet, getBalance, sendTransaction };
