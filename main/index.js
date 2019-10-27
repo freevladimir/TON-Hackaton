@@ -7,7 +7,13 @@ const TelegramBot = require("node-telegram-bot-api");
 
 const token = "1067249757:AAElGAQa6ldsA6YwjNTdw0MBAMRAL-mZdqk";
 
-var bot = new TelegramBot(token, { polling: true });
+var bot = new TelegramBot(token, { polling: false });
+bot.sendMessage = (...params) => {
+  console.log(params);
+};
+
+// 1 наш токен = 0.1 грамма
+const RATE = 0.1;
 
 app.listen(3001, () => {
   console.log("Server ready");
@@ -15,30 +21,62 @@ app.listen(3001, () => {
 
 // бд, будет тут или настоящая потом
 const db = {
-  users: {
-    id: {
-      telegramId: "123",
-      walledId: "xxxx"
+  users: [
+    {
+      // telegramId: "123",
+      // walledId: "xxxx"
     }
-  }
+  ]
 };
 
 const Auction = require("./auction");
 const auction = new Auction();
+const OUR_VALLET = "1233";
 
 // первый акцион
-auction.create({ name: "Picture" });
+auction.create({ title: "Picture", price: 490 });
 
 // проверка жизни аукциона
 setInterval(async () => {
   console.log("Auction:", auction.state);
-  if (auction.isExprired()) {
+
+  if (!auction.state.calculating && auction.isExprired()) {
+    auction.state.calculating = true;
     console.log("Close auction");
 
-    auction.state.users.forEach(user => {
-      bot.sendMessage(user, "Аукцион закончился, но скоро начнем новый");
-      // ...
-    });
+    const { price, title } = auction.state;
+    let calcPrice = price;
+
+    auction.state.bids
+      .sort((a, b) => {
+        return a.amount > b.amount;
+      })
+      .forEach(bid => {
+        const { userId, amount } = bid;
+
+        const user = db.users.find(u => u.telegramId === userId);
+
+        if (calcPrice - amount >= 0) {
+          calcPrice = calcPrice - amount;
+
+          try {
+            // await blockchainApi.sendTransaction(user.wallet.name, OUR_VALLET,amount);
+            const percent = Math.floor((amount / price) * 100);
+            bot.sendMessage(
+              user.telegramId,
+              `Поздравляем, ты купил ${percent}% от ${title}`
+            );
+          } catch (error) {
+            console.log(error);
+            bot.sendMessage(user.telegramId, "Ой, что-то пошло не так");
+          }
+        } else {
+          bot.sendMessage(
+            user.telegramId,
+            "Аукцион закончился, но ты ничего не выиграл:( Но ничего, мыскоро начнем новый"
+          );
+        }
+      });
 
     auction.close();
     auction.create({ name: "Picture " + Math.random() });
@@ -107,3 +145,27 @@ bot.on("message", function(msg, match) {
     }
   }
 });*/
+
+function test() {
+  db.users.push({
+    telegramId: "2121"
+  });
+
+  db.users.push({
+    telegramId: "212231"
+  });
+
+  db.users.push({
+    telegramId: "2111221"
+  });
+
+  db.users.push({
+    telegramId: "2111221"
+  });
+  auction.bid("2121", 200);
+  auction.bid("212231", 600);
+  auction.bid("2111221", 200);
+  auction.bid("2111221", 2020);
+}
+
+test();

@@ -2,22 +2,30 @@ class Auction {
   constructor() {
     this.state = {
       // created: Date
-      // name: 'Picture'
+      // title: 'Picture'
       // id: 5,
-      users: []
+      users: [],
+      // price:
+      bids: [
+        {
+          userId: "123",
+          amount: 200
+        }
+      ]
+      // calculating:
     };
   }
 
   create(params) {
     this.state = {
       ...params,
-      users: [],
+      bids: [],
       created: Date.parse(new Date())
     };
   }
 
   isExprired() {
-    const AUCTION_LIFETIME = 10 * 60 * 1000; // 10 mins
+    const AUCTION_LIFETIME = 1 * 10 * 1000; // 1 min
 
     if (Date.parse(new Date()) > this.state.created + AUCTION_LIFETIME) {
       return true;
@@ -26,13 +34,17 @@ class Auction {
     return false;
   }
 
-  addUser(id) {
-    this.state.users.push(id);
+  bid(userId, amount) {
+    console.log("Bid ", userId, ", user", amount);
+    this.state.bids.push({
+      userId,
+      amount
+    });
   }
 
   close() {
     this.state = {
-      users: []
+      bids: []
     };
   }
 }

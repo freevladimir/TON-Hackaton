@@ -1,11 +1,12 @@
 const axios = require("axios");
 
-const BLOCKCHAIN_API = "localhost:3000";
+// const BLOCKCHAIN_API = "localhost:3000";
+const BLOCKCHAIN_API = "http://11cb26c4.ngrok.io";
 
 async function createWallet() {
   try {
     const response = await axios.post(`${BLOCKCHAIN_API}/api/create-wallet`);
-    const { walletId } = response.data;
+    const { id, name } = response.data;
 
     return walletId;
   } catch (error) {
@@ -31,6 +32,9 @@ async function sendTransaction(sender, recipient, amount) {
       sender,
       recipient,
       amount
+      // sender: "my_wallet_vova",
+      // recipient: "0QAH_BQZq6jK9683SxhsKU0GOrV7So5I4HHdEyHfGwWTvPTu",
+      // amount: ".010"
     });
 
     return true;
