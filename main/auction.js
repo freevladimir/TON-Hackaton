@@ -25,7 +25,7 @@ class Auction {
   }
 
   isExprired() {
-    const AUCTION_LIFETIME = 1 * 10 * 1000; // 1 min
+    const AUCTION_LIFETIME = 1 * 1000 * 1000; // 1 min
 
     if (Date.parse(new Date()) > this.state.created + AUCTION_LIFETIME) {
       return true;
@@ -36,6 +36,14 @@ class Auction {
 
   bid(userId, amount) {
     console.log("Bid ", userId, ", user", amount);
+
+    const find = this.state.bids.find(bid => bid.userId === userId);
+
+    if (find) {
+      console.log("Твоя ставка изменена");
+      find.amount = amount;
+      return;
+    }
     this.state.bids.push({
       userId,
       amount

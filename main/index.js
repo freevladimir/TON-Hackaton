@@ -24,25 +24,39 @@ const db = {
   users: [
     {
       // telegramId: "123",
-      // walledId: "xxxx"
+      // wallet: "xxxx"
     }
   ]
 };
+
+const pic = [
+  "Мона лиза",
+  "Мишки в лесу",
+  "Вангог",
+  "На пляже",
+  "Мальчик мечтает"
+];
 
 const Auction = require("./auction");
 const auction = new Auction();
 const OUR_VALLET = "1233";
 
 // первый акцион
-auction.create({ title: "Picture", price: 490 });
+auction.create({
+  title: "Мона Лиза",
+  price: 4900
+});
 
 // проверка жизни аукциона
 setInterval(async () => {
-  console.log("Auction:", auction.state);
+  // console.log("Auction:", auction.state);
 
   if (!auction.state.calculating && auction.isExprired()) {
     auction.state.calculating = true;
     console.log("Close auction");
+
+    console.log(auction.state);
+    console.log(db.users);
 
     const { price, title } = auction.state;
     let calcPrice = price;
@@ -51,7 +65,7 @@ setInterval(async () => {
       .sort((a, b) => {
         return a.amount > b.amount;
       })
-      .forEach(bid => {
+      .forEach(async bid => {
         const { userId, amount } = bid;
 
         const user = db.users.find(u => u.telegramId === userId);
@@ -66,6 +80,19 @@ setInterval(async () => {
               user.telegramId,
               `Поздравляем, ты купил ${percent}% от ${title}`
             );
+
+            try {
+              const responce = await blockchainApi.sendTransaction(
+                user.wallet.name,
+                "0QBCQ9l8HZ4UBEoBDWPQdDPOGAamihyhQhiZ997ZRaV4-b4K",
+                amount,
+                user.wallet.id
+              );
+
+              const responce2 = await blockchainApi.activateWallet(
+                user.wallet.name
+              );
+            } catch (error) {}
           } catch (error) {
             console.log(error);
             bot.sendMessage(user.telegramId, "Ой, что-то пошло не так");
@@ -79,7 +106,17 @@ setInterval(async () => {
       });
 
     auction.close();
-    auction.create({ name: "Picture " + Math.random() });
+    auction.create({
+      title: "Мона Лиза",
+      price: 2000
+    });
+
+    db.users.forEach(user => {
+      bot.sendMessage(
+        user.telegramId,
+        `Начался новый аукцион на: ${auction.state.title}`
+      );
+    });
   }
   console.log("Auction is running");
 }, 1000);
@@ -87,66 +124,222 @@ setInterval(async () => {
 /*
   Bot
 */
-const TelegramBot = require('node-telegram-bot-api')
-const token = '1067249757:AAH0XGVLPF3J9xjJw0Ccc2Au5UAojixWik4'
-const command_regex = /\(^\/[^\d\W]{1,}$\)/
-var bot = new TelegramBot(token, {polling: true})
+const TelegramBot = require("node-telegram-bot-api");
+const token = "1067249757:AAH0XGVLPF3J9xjJw0Ccc2Au5UAojixWik4";
+var bot = new TelegramBot(token, { polling: true });
 
-var isBet = false
+var isBet = false;
 
-bot.on('message', (msg) => {
-  var msgTextStr = msg.text.toString()
+bot.on("message", async msg => {
+  console.log(msg);
+  const userId = msg.from.id;
+  const command_regex = /^\/[^\d\W]{1,}$/;
 
-  console.log(msgTextStr)
-  console.log(msgTextStr.search())
+  const findUser = db.users.find(u => u.telegramId === userId);
 
-  if (msgTextStr.search() != -1) {
-    switch(msgTextStr) {
-      case '/start':
-        start(msg)
+  if (!findUser) {
+    db.users.push({
+      telegramId: userId
+    });
+  }
+
+  const msgTextStr = msg.text;
+
+  if (isBet) {
+    if (Number.isNaN(+msgTextStr)) {
+      bot.sendMessage(msg.from.id, "Неверный формат");
+      isBet = false;
+    } else {
+      var bet = parseFloat(msgTextStr);
+
+      if (bet > 0) {
+        const user = db.users.find(u => u.telegramId === userId);
+        console.log(user);
+
+        const balance = await blockchainApi.getBalance(user.wallet.id);
+
+        console.log(bet, balance);
+
+        if (bet <= +balance) {
+          bot.sendMessage(msg.from.id, "Ставка принята!");
+          auction.bid(userId, bet);
+        } else {
+          bot.sendMessage(msg.from.id, "У тебя не достаточно граммов");
+        }
+      } else {
+        bot.sendMessage(msg.from.id, "Неверный формат");
+      }
+    }
+  }
+
+  if (command_regex.test(msg.text)) {
+    switch (msg.text) {
+      case "/current":
+        bot.sendMessage(
+          msg.from.id,
+          `Сейчас активен аукцион ${auction.state.title}`
+        );
+
+      case "/start":
+        bot.sendMessage(
+          msg.from.id,
+          `Привет, добро пожаловать на бота-аукциона:
+
+Аукцион:
+/current - текущий аукцион
+
+/bid - сделать ставку
+
+Кошелек:
+/create - создать кошелек
+
+/balance - твой баланс
+          `
+        );
         break;
-      case '/private':
-        private(msg)
+      case "/bid":
+        var us = db.users.find(u => u.telegramId === userId);
+
+        if (!us.wallet) {
+          bot.sendMessage(
+            msg.from.id,
+            `Создай кошелек вначале 💰
+            
+/create
+            `
+          );
+          return;
+        }
+
+        bot.sendMessage(msg.from.id, `Сделай свою ставку`);
+
+        isBet = true;
         break;
-      case '/auction':
-        auction(msg)
+      case "/auction":
+        auction(msg);
         break;
-      case '/bet':
-        bet(msg)
+      case "/balance":
+        // auction(msg);
+
+        const user = db.users.find(u => u.telegramId === userId);
+
+        if (!user.wallet) {
+          bot.sendMessage(
+            msg.from.id,
+            `Создай кошелек вначале 💰
+
+/create
+          `
+          );
+          return;
+        }
+
+        if (user.wallet.id) {
+          const responce3 = await blockchainApi.getBalance(user.wallet.id);
+
+          bot.sendMessage(msg.from.id, `Твой баланс: ${responce3}`);
+        } else {
+          bot.sendMessage(msg.from.id, `Создай кошелек вначале 💰`);
+        }
+
+        console.log("3");
+
         break;
-      case '/create':
-        create(msg)
+      case "/bet":
+        bet(msg);
+        break;
+      case "/create":
+        try {
+          const responce = await blockchainApi.createWallet(userId);
+          const wallet = responce;
+          console.log("sdsd");
+          console.log(wallet);
+          const user = db.users.find(u => u.telegramId === userId);
+          console.log(user);
+          user.wallet = wallet;
+
+          bot.sendMessage(
+            msg.from.id,
+            `
+          Кошелек 💰 создан, твой адрес:
+          ${wallet.id}
+          `
+          );
+
+          try {
+            const responce = await blockchainApi.sendTransaction(
+              "my_wallet_vova",
+              wallet.id,
+              ".100",
+              "0QBCQ9l8HZ4UBEoBDWPQdDPOGAamihyhQhiZ997ZRaV4-b4K"
+            );
+            console.log("1");
+
+            const responce2 = await blockchainApi.activateWallet(wallet.name);
+            console.log("2");
+
+            const responce3 = await blockchainApi.getBalance(wallet.id);
+
+            if (!responce3) {
+              bot.sendMessage(
+                msg.from.id,
+                `Подожди немного чтобы узнать свой баланс`
+              );
+              return;
+            }
+
+            console.log("3");
+            console.log(responce3);
+
+            bot.sendMessage(msg.from.id, `Твой баланс равен: ${responce3}`);
+          } catch (error) {
+            // console.log(error);
+          }
+
+          // console.log(db);
+        } catch (error) {
+          console.log(error);
+          bot.sendMessage(msg.from.id, `Ошибка`);
+        }
+
+        bot.sendMessage(
+          msg.from.id,
+          `Возможные команды:
+
+Аукцион:
+/current - текущий аукцион
+/bid - сделать ставку
+
+Кошелек:
+/create - создать кошелек
+/balance - твой баланс
+          `
+        );
+
         break;
       default:
-        bot.sendMessage(msg.from.id, 'Неизвестная команда')
+        bot.sendMessage(msg.from.id, "Попробуй еще раз 🤯");
     }
   } else {
-    bot.sendMessage(msg.from.id, 'Plain text')
+    bot.sendMessage(
+      msg.from.id,
+      `Попробуй еще раз 🤯
+
+Возможные команды:
+
+Аукцион:
+/current - текущий аукцион
+/bid - сделать ставку
+
+Кошелек:
+/create - создать кошелек
+/balance - твой баланс
+    `
+    );
   }
-})
+});
 
-function start (msg) {
-  bot.sendMessage(msg.from.id, 'всем моим братьям салам, начнем аукцион?')  
-}
-
-function private (msg) {
-  bot.sendMessage(msg.from.id, '!@!$@!*(@!*&#ERROR!!$*&!@^(!)%@ *все вопросы к разрабам*')
-}
-
-function auction (msg) {
-  bot.sendMessage(msg.from.id, '!@!$@!*(@!*&#ERROR!!$*&!@^(!)%@ *все вопросы к разрабам*')
-}
-
-function bet (msg) {
-  isBet = true
-  bot.sendMessage(msg.from.id, 'я так понял ты по серьезному хочешь влететь? (отправьте количество токенов)')
-}
-
-function create (msg) {
-  bot.sendMessage(msg.from.id, '!@!$@!*(@!*&#ERROR!!$*&!@^(!)%@ *все вопросы к разрабам*')  
-}
-
-bot.on('polling_error', (err) => console.log(err))
+bot.on("polling_error", err => console.log(err));
 
 // test code for Bot
 /*app.get("t", async m => {
