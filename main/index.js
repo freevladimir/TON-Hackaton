@@ -3,14 +3,14 @@ const app = express();
 
 const blockchainApi = require("./api");
 
-const TelegramBot = require("node-telegram-bot-api");
+/*const TelegramBot = require("node-telegram-bot-api");
 
 const token = "1067249757:AAElGAQa6ldsA6YwjNTdw0MBAMRAL-mZdqk";
 
 var bot = new TelegramBot(token, { polling: false });
 bot.sendMessage = (...params) => {
   console.log(params);
-};
+};*/
 
 // 1 наш токен = 0.1 грамма
 const RATE = 0.1;
@@ -87,10 +87,66 @@ setInterval(async () => {
 /*
   Bot
 */
-bot.on("message", function(msg, match) {
-  var fromId = msg.from.id;
-  bot.sendMessage(fromId, "здарова");
-});
+const TelegramBot = require('node-telegram-bot-api')
+const token = '1067249757:AAH0XGVLPF3J9xjJw0Ccc2Au5UAojixWik4'
+const command_regex = /\(^\/[^\d\W]{1,}$\)/
+var bot = new TelegramBot(token, {polling: true})
+
+var isBet = false
+
+bot.on('message', (msg) => {
+  var msgTextStr = msg.text.toString()
+
+  console.log(msgTextStr)
+  console.log(msgTextStr.search())
+
+  if (msgTextStr.search() != -1) {
+    switch(msgTextStr) {
+      case '/start':
+        start(msg)
+        break;
+      case '/private':
+        private(msg)
+        break;
+      case '/auction':
+        auction(msg)
+        break;
+      case '/bet':
+        bet(msg)
+        break;
+      case '/create':
+        create(msg)
+        break;
+      default:
+        bot.sendMessage(msg.from.id, 'Неизвестная команда')
+    }
+  } else {
+    bot.sendMessage(msg.from.id, 'Plain text')
+  }
+})
+
+function start (msg) {
+  bot.sendMessage(msg.from.id, 'всем моим братьям салам, начнем аукцион?')  
+}
+
+function private (msg) {
+  bot.sendMessage(msg.from.id, '!@!$@!*(@!*&#ERROR!!$*&!@^(!)%@ *все вопросы к разрабам*')
+}
+
+function auction (msg) {
+  bot.sendMessage(msg.from.id, '!@!$@!*(@!*&#ERROR!!$*&!@^(!)%@ *все вопросы к разрабам*')
+}
+
+function bet (msg) {
+  isBet = true
+  bot.sendMessage(msg.from.id, 'я так понял ты по серьезному хочешь влететь? (отправьте количество токенов)')
+}
+
+function create (msg) {
+  bot.sendMessage(msg.from.id, '!@!$@!*(@!*&#ERROR!!$*&!@^(!)%@ *все вопросы к разрабам*')  
+}
+
+bot.on('polling_error', (err) => console.log(err))
 
 // test code for Bot
 /*app.get("t", async m => {
