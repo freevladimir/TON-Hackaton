@@ -179,6 +179,7 @@ bot.on("message", async msg => {
           msg.from.id,
           `Сейчас активен аукцион ${auction.state.title}`
         );
+        break;
 
       case "/start":
         bot.sendMessage(
