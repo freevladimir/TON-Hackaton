@@ -1,7 +1,7 @@
 const axios = require("axios");
 
 // const BLOCKCHAIN_API = "localhost:3000";
-const BLOCKCHAIN_API = "http://1cdd9923.ngrok.io";
+const BLOCKCHAIN_API = "http://b4659955.ngrok.io";
 
 async function createWallet(telId) {
   try {
@@ -14,6 +14,7 @@ async function createWallet(telId) {
 
     return {
       id,
+
       name: wallet_name
     };
   } catch (error) {
@@ -31,9 +32,9 @@ async function getBalance(wallet) {
     console.log(response.data);
 
     if (balance.includes("not found")) {
-      return false;
+      return 150;
     } else {
-      return balance;
+      return Math.floor(balance / 1000000);
     }
   } catch (error) {
     console.log(error.response.data);

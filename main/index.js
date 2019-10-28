@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 
+let isFinish = false;
 const blockchainApi = require("./api");
 
 /*const TelegramBot = require("node-telegram-bot-api");
@@ -29,13 +30,7 @@ const db = {
   ]
 };
 
-const pic = [
-  "Мона лиза",
-  "Мишки в лесу",
-  "Вангог",
-  "На пляже",
-  "Мальчик мечтает"
-];
+const pic = ["UTON 3", "Мишки в лесу", "Вангог", "На пляже", "Мальчик мечтает"];
 
 const Auction = require("./auction");
 const auction = new Auction();
@@ -43,83 +38,83 @@ const OUR_VALLET = "1233";
 
 // первый акцион
 auction.create({
-  title: "Мона Лиза",
+  title: "UTON tree",
   price: 4900
 });
 
 // проверка жизни аукциона
-setInterval(async () => {
+setTimeout(async () => {
+  isFinish = true;
   // console.log("Auction:", auction.state);
 
-  if (!auction.state.calculating && auction.isExprired()) {
-    auction.state.calculating = true;
-    console.log("Close auction");
+  // if (!auction.state.calculating && auction.isExprired()) {
+  console.log("Close auction");
 
-    console.log(auction.state);
-    console.log(db.users);
+  console.log(auction.state);
+  console.log(db.users);
 
-    const { price, title } = auction.state;
-    let calcPrice = price;
+  const { price, title } = auction.state;
+  let calcPrice = price;
 
-    auction.state.bids
-      .sort((a, b) => {
-        return a.amount > b.amount;
-      })
-      .forEach(async bid => {
-        const { userId, amount } = bid;
+  auction.state.bids
+    .sort((a, b) => {
+      return a.amount > b.amount;
+    })
+    .forEach(async bid => {
+      const { userId, amount } = bid;
 
-        const user = db.users.find(u => u.telegramId === userId);
+      const user = db.users.find(u => u.telegramId === userId);
 
-        if (calcPrice - amount >= 0) {
-          calcPrice = calcPrice - amount;
+      if (calcPrice - amount >= 0) {
+        calcPrice = calcPrice - amount;
 
-          try {
-            // await blockchainApi.sendTransaction(user.wallet.name, OUR_VALLET,amount);
-            const percent = Math.floor((amount / price) * 100);
-            bot.sendMessage(
-              user.telegramId,
-              `Поздравляем, ты купил ${percent}% от ${title}`
-            );
-
-            try {
-              const responce = await blockchainApi.sendTransaction(
-                user.wallet.name,
-                "0QBCQ9l8HZ4UBEoBDWPQdDPOGAamihyhQhiZ997ZRaV4-b4K",
-                amount,
-                user.wallet.id
-              );
-
-              const responce2 = await blockchainApi.activateWallet(
-                user.wallet.name
-              );
-            } catch (error) {}
-          } catch (error) {
-            console.log(error);
-            bot.sendMessage(user.telegramId, "Ой, что-то пошло не так");
-          }
-        } else {
+        try {
+          // await blockchainApi.sendTransaction(user.wallet.name, OUR_VALLET,amount);
+          const percent = Math.floor((amount / price) * 100);
           bot.sendMessage(
             user.telegramId,
-            "Аукцион закончился, но ты ничего не выиграл:( Но ничего, мыскоро начнем новый"
+            `Поздравляем, ты купил ${percent + 15}% от ${title}`
           );
+
+          try {
+            const responce = await blockchainApi.sendTransaction(
+              user.wallet.name,
+              "0QBCQ9l8HZ4UBEoBDWPQdDPOGAamihyhQhiZ997ZRaV4-b4K",
+              amount,
+              user.wallet.id
+            );
+
+            const responce2 = await blockchainApi.activateWallet(
+              user.wallet.name
+            );
+          } catch (error) {}
+        } catch (error) {
+          console.log(error);
+          bot.sendMessage(user.telegramId, "Ой, что-то пошло не так");
         }
-      });
-
-    auction.close();
-    auction.create({
-      title: "Мона Лиза",
-      price: 2000
+      } else {
+        bot.sendMessage(
+          user.telegramId,
+          "Аукцион закончился, но ты ничего не выиграл:( Но ничего, мыскоро начнем новый"
+        );
+      }
     });
 
-    db.users.forEach(user => {
-      bot.sendMessage(
-        user.telegramId,
-        `Начался новый аукцион на: ${auction.state.title}`
-      );
-    });
-  }
+  // auction.close();
+  // auction.create({
+  //   title: "UTON 3",
+  //   price: 2000
+  // });
+
+  // db.users.forEach(user => {
+  //   bot.sendMessage(
+  //     user.telegramId,
+  //     `Начался новый аукцион на: ${auction.state.title}`
+  //   );
+  // });
+  // }
   console.log("Auction is running");
-}, 1000);
+}, 1000 * 60 * 3);
 
 /*
   Bot
@@ -174,11 +169,54 @@ bot.on("message", async msg => {
 
   if (command_regex.test(msg.text)) {
     switch (msg.text) {
+      case "/all":
+        if (!isFinish) {
+          bot.sendMessage(msg.from.id, `Подожди аукцион еще идет`);
+          return;
+        }
+
+        // bot.sendMessage(msg.from.id, `Мы решили продать`);
+
+        auction.state.bids.forEach(bid => {
+          bot.sendMessage(bid.userId, `Основной владелец сменился на Tang`);
+          bot.sendMessage(bid.userId, `Поздравим Tang 😎`);
+
+          setTimeout(() => {
+            bot.sendMessage(
+              bid.userId,
+              `Учавствуйте еще в следующем аукционе!`
+            );
+          }, 3000);
+
+          // setTimeout(() => {
+
+          // }, 1500);
+        });
+
+        try {
+          const d2 = db.users.find(u => u.telegramId === userId);
+
+          const response = await blockchainApi.sendTransaction(
+            d2.wallet.name,
+            "0QBCQ9l8HZ4UBEoBDWPQdDPOGAamihyhQhiZ997ZRaV4-b4K",
+            amount,
+            d2.wallet.id
+          );
+        } catch (error) {
+          console.log(error);
+        }
+
+        return;
+
       case "/current":
+        if (isFinish) {
+          bot.sendMessage(msg.from.id, `Аукцион закончен`);
+        }
         bot.sendMessage(
           msg.from.id,
-          `Сейчас активен аукцион ${auction.state.title}`
+          `Сейчас активен аукцион: "${auction.state.title}"`
         );
+        return;
 
       case "/start":
         bot.sendMessage(
@@ -196,7 +234,16 @@ bot.on("message", async msg => {
 /balance - твой баланс
           `
         );
+
+        setTimeout(() => {
+          bot.sendMessage(
+            msg.from.id,
+            `Сейчас активен аукцион ${auction.state.title}. Будешь учавствовать? ✌  `
+          );
+        }, 3000);
         break;
+        return;
+
       case "/bid":
         var us = db.users.find(u => u.telegramId === userId);
 
@@ -285,6 +332,13 @@ bot.on("message", async msg => {
                 msg.from.id,
                 `Подожди немного чтобы узнать свой баланс`
               );
+
+              setTimeout(async () => {
+                const respon23 = await blockchainApi.getBalance(wallet.id);
+
+                bot.sendMessage(msg.from.id, `Твой баланс равен: ${respon23}`);
+              }, 4000);
+
               return;
             }
 
@@ -313,12 +367,13 @@ bot.on("message", async msg => {
 Кошелек:
 /create - создать кошелек
 /balance - твой баланс
+
           `
         );
 
         break;
       default:
-        bot.sendMessage(msg.from.id, "Попробуй еще раз 🤯");
+      // bot.sendMessage(msg.from.id, "Попробуй еще раз 🤯");
     }
   } else {
     bot.sendMessage(

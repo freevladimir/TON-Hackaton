@@ -25,7 +25,7 @@ class Auction {
   }
 
   isExprired() {
-    const AUCTION_LIFETIME = 1 * 1000 * 1000; // 1 min
+    const AUCTION_LIFETIME = 1 * 20 * 1000; // 1 min
 
     if (Date.parse(new Date()) > this.state.created + AUCTION_LIFETIME) {
       return true;
